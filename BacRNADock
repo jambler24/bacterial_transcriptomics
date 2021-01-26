@@ -1,0 +1,143 @@
+FROM ubuntu:xenial
+
+RUN apt-get update --fix-missing -qq && apt-get install -y -q \
+    aufs-tools \
+    automake \
+    build-essential \
+    cmake \
+    curl \
+    g++ \
+    openjdk-8-jre \
+    openjdk-8-jdk \
+    locales \
+    libncurses5-dev  \
+    libncursesw5-dev \
+    libcurl4-openssl-dev \
+    libbz2-dev \
+    libx11-dev \
+    pkg-config \
+    zlib1g-dev \
+    bzip2 \
+    r-base \
+    default-jre \
+    git-core \
+    bc \
+    unzip \
+    wget \
+    xutils-dev \
+    && apt-get clean \
+    && apt-get purge
+
+
+
+RUN apt-get update --fix-missing -qq && apt-get install -y -q \
+    software-properties-common
+
+RUN add-apt-repository ppa:deadsnakes/ppa
+
+
+RUN apt-get update --fix-missing -qq && apt-get install -y -q \
+    python3.7 \
+    python3-pip
+
+RUN update-alternatives --install /usr/bin/python python /usr/bin/python3.7 1
+
+RUN python --version
+
+RUN python -m pip install --upgrade pip
+RUN python -m pip install numpy
+RUN python -m pip install scipy
+RUN python -m pip install biopython
+RUN python -m pip install git+https://github.com/katholt/srst2
+
+# RUN python2.7 -m pip install RSeQC
+
+RUN python -m pip install multiqc
+RUN python -m pip install venn
+RUN python -m pip install pandas
+
+# install Picard Tools
+RUN curl -fksSL https://github.com/broadinstitute/picard/releases/download/2.9.0/picard.jar > /usr/local/bin/picard.jar && \
+    chmod +x /usr/local/bin/picard.jar
+
+
+## Install R packages for ggplot2
+RUN R -e 'install.packages( c("reshape2","optparse", "BiocManager"), repos="http://cloud.r-project.org/");' && \
+    apt-get update && apt-get install r-cran-ggplot2 -y -q
+RUN R -e 'BiocManager::install("dupRadar");'
+
+
+
+
+################################################################################################
+
+
+
+
+WORKDIR /
+
+ENV LANG=C.UTF-8 LC_ALL=C.UTF-8
+ENV PATH /opt/conda/bin:$PATH
+
+RUN apt-get update --fix-missing && apt-get install -y wget bzip2 ca-certificates \
+    libglib2.0-0 libxext6 libsm6 libxrender1 \
+    git mercurial subversion
+
+RUN wget --quiet https://repo.anaconda.com/archive/Anaconda3-5.3.0-Linux-x86_64.sh -O ~/anaconda.sh && \
+    /bin/bash ~/anaconda.sh -b -p /opt/conda && \
+    rm ~/anaconda.sh && \
+    ln -s /opt/conda/etc/profile.d/conda.sh /etc/profile.d/conda.sh && \
+    echo ". /opt/conda/etc/profile.d/conda.sh" >> ~/.bashrc && \
+    echo "conda activate base" >> ~/.bashrc
+
+RUN apt-get install -y curl grep sed dpkg && \
+    TINI_VERSION=`curl https://github.com/krallin/tini/releases/latest | grep -o "/v.*\"" | sed 's:^..\(.*\).$:\1:'` && \
+    curl -L "https://github.com/krallin/tini/releases/download/v${TINI_VERSION}/tini_${TINI_VERSION}.deb" > tini.deb && \
+    dpkg -i tini.deb && \
+    rm tini.deb && \
+    apt-get clean
+
+
+RUN conda install -c hcc resistomeanalyzer
+RUN conda install -c bioconda trimmomatic
+RUN conda install -c bioconda fastqc
+RUN conda install -c bioconda picard=2.18.27
+RUN conda install -c bioconda conda-forge::r-data.table=1.12.0
+RUN conda install -c bioconda conda-forge::r-gplots=3.0.1.1
+RUN conda install -c bioconda conda-forge::r-markdown=0.9
+RUN conda install -c bioconda csvtk=0.17.0
+RUN conda install -c conda-forge gsl
+RUN conda install -c bioconda trim-galore
+RUN conda install -c bioconda cutadapt
+RUN conda install -c bioconda fastx_toolkit
+RUN conda install -c bioconda gffread=0.9.12
+RUN conda install -c bioconda deeptools=3.2.0
+RUN conda install -c bioconda sra-tools
+RUN conda install -c bioconda bioconductor-dupradar=1.12.1
+RUN conda install -c bioconda samtools
+
+RUN conda install -c bioconda star
+RUN conda install -c bioconda bwa
+
+RUN conda install -c bioconda salmon
+RUN conda install -c bioconda rsem
+RUN conda install -c bioconda stringtie
+RUN conda install -c bioconda bioconductor-rsubread
+RUN conda install -c bioconda bowtie2
+
+RUN conda install -c bioconda bedtools
+#RUN conda install -c bioconda bioconductor-deseq2
+
+# Visualisation
+RUN conda install -c bioconda circos
+
+
+# Build this image
+#docker build -t bacterial_transcriptomics -f BacRNADock .
+
+# To build sing image
+#docker run -v /var/run/docker.sock:/var/run/docker.sock -v /Volumes/External/BacRNADock:/output --privileged -t --rm singularityware/docker2singularity:v2.6 -m "/shared_fs /custom_mountpoint2" bacterial_transcriptomics:latest
+
+# To SCP
+# scp /Volumes/External/BacRNADock/<image> jambler@transfer.ilifu.ac.za:/cbio/users/jambler/images/
+
