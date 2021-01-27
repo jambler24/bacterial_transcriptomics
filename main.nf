@@ -198,8 +198,8 @@ srst_max_gene_divergence    = params.srst_max_gene_divergence
 
 
 // From https://pubmlst.org/data/dbases.xml             <----------------------- This needs a tweak to be generalised
-mlst_species_srst2 = "Streptococcus pneumoniae"
-mlst_definitions_srst2 = "spneumoniae"
+mlst_species_srst2 = "Mycobacteria spp."
+mlst_definitions_srst2 = "mycobacteria"
 mlst_seperator_srst2 = "_"
 
 
@@ -395,12 +395,12 @@ process '1D_prepare_samples' {
 
 newSampleSheet
   .splitCsv(header:true)
-  .map { row-> tuple(row.number, file(row.R1), file(row.R2)) }
+  .map { row-> tuple(row.number, file(row.R1), file(row.R2), row.isolate) }
   .set { newSampleChannel }
 
 newSampleSheetFastQC
   .splitCsv(header:true)
-  .map { row-> tuple(row.number, file(row.R1), file(row.R2)) }
+  .map { row-> tuple(row.number, file(row.R1), file(row.R2), row.isolate) }
   .set { newSampleChannelFastQC }
 
 
@@ -416,7 +416,7 @@ newSampleSheetFastQC
         saveAs: {filename -> filename.indexOf(".zip") > 0 ? "zips/$filename" : "$filename"}
 
     input:
-    set number, file(R1), file(R2) from newSampleChannelFastQC
+    set number, file(R1), file(R2), isolate from newSampleChannelFastQC
 
     output:
     file "*_fastqc.{zip,html}" into fastqc_results
@@ -425,10 +425,10 @@ newSampleSheetFastQC
     """
     #  MiSeq file naming convention (samplename_S1_L001_[R1]_001)
 
-    mv $R1 sample_${number}_R1_001.fq.gz
-    mv $R2 sample_${number}_R2_001.fq.gz
+    mv $R1 sample_${isolate}_R1_001.fq.gz
+    mv $R2 sample_${isolate}_R2_001.fq.gz
 
-    fastqc -q sample_${number}_R1_001.fq.gz sample_${number}_R2_001.fq.gz
+    fastqc -q sample_${isolate}_R1_001.fq.gz sample_${isolate}_R2_001.fq.gz
     """
 }
 
@@ -451,7 +451,7 @@ process '1F_trim_galore' {
         }
 
     input:
-    set number, file(R1), file(R2) from newSampleChannel
+    set number, file(R1), file(R2), isolate from newSampleChannel
 
     output:
     file "*_R1_001.fq.gz" into forwardTrimmedAlignment
@@ -465,6 +465,9 @@ process '1F_trim_galore' {
     file "*_fastqc.{zip,html}" into trimgalore_fastqc_reports
     val "$number" into sampleNumber_srst2
     val "$number" into sampleNumber
+    val "$isolate" into sampleIsolate
+    val "$isolate" into sampleIsolateQuant
+    val "$isolate" into sampleIsolate_srst2
     set number, file("*_R1_001.fq.gz"), file("*_R2_001.fq.gz") into vf_read_pairs
 
     script:
@@ -500,9 +503,10 @@ process '1F_trim_galore' {
 
 process '2A_read_mapping' {
   input:
-    file forwardTrimmed
-    file reverseTrimmed
+    file forwardTrimmedAlignment
+    file reverseTrimmedAlignment
     val sampleNumber
+    val sampleIsolate
     file genome from genome_file
     file genome_bwa_amb
     file genome_bwa_ann
@@ -510,19 +514,19 @@ process '2A_read_mapping' {
     file genome_bwa_pac
     file genome_bwa_sa
   output:
-    file "sample_${sampleNumber}.sorted.bam" into bamfiles
-    file "sample_${sampleNumber}.sorted.bai" into bamindexfiles
-    file "sample_${sampleNumber}.sorted.bam" into bam_rseqc
-    file "sample_${sampleNumber}.sorted.bai" into bamindexfiles_rseqc
-    file "sample_${sampleNumber}.sorted.bam" into bam_preseq
-    file "sample_${sampleNumber}.sorted.bam" into bam_forSubsamp
-    file "sample_${sampleNumber}.sorted.bam" into bam_skipSubsamp
-    file "sample_${sampleNumber}.sorted.bam" into bam_featurecounts
+    file "sample_${sampleIsolate}.sorted.bam" into bamfiles
+    file "sample_${sampleIsolate}.sorted.bai" into bamindexfiles
+    file "sample_${sampleIsolate}.sorted.bam" into bam_rseqc
+    file "sample_${sampleIsolate}.sorted.bai" into bamindexfiles_rseqc
+    file "sample_${sampleIsolate}.sorted.bam" into bam_preseq
+    file "sample_${sampleIsolate}.sorted.bam" into bam_forSubsamp
+    file "sample_${sampleIsolate}.sorted.bam" into bam_skipSubsamp
+    file "sample_${sampleIsolate}.sorted.bam" into bam_featurecounts
   script:
   if( aligner == 'bwa-mem' )
     """
-    bwa mem $genome $forwardTrimmed $reverseTrimmed | samtools sort -O BAM -o sample_${sampleNumber}.sorted.bam
-    samtools index sample_${sampleNumber}.sorted.bam sample_${sampleNumber}.sorted.bai
+    bwa mem $genome $forwardTrimmedAlignment $reverseTrimmedAlignment | samtools sort -O BAM -o sample_${sampleIsolate}.sorted.bam
+    samtools index sample_${sampleIsolate}.sorted.bam sample_${sampleIsolate}.sorted.bai
     """
 
   else
@@ -672,6 +676,7 @@ process '3A_srst2' {
     file forward_trimmed_reads_for_srst2
     file reverse_trimmed_reads_for_srst2
     val sampleNumber_srst2
+    val sampleIsolate_srst2
     val srst_min_gene_cov
     val srst_max_gene_divergence
     val mlst_species_srst2
@@ -679,7 +684,7 @@ process '3A_srst2' {
     val mlst_seperator_srst2
 
     output:
-    file("${sampleNumber_srst2}_srst2__mlst*")
+    file("${sampleIsolate_srst2}_srst2__mlst*")
 
     script:
     geneDB = params.gene_db ? "--gene_db $gene_db" : ''
@@ -692,8 +697,7 @@ process '3A_srst2' {
     # /samtools-0.1.18/
     export SRST2_SAMTOOLS="/samtools-0.1.18/samtools"
     getmlst.py --species "${mlst_species_srst2}"
-    srst2 --output ${sampleNumber_srst2}_srst2 --input_pe $forward_trimmed_reads_for_srst2 $reverse_trimmed_reads_for_srst2 --mlst_db ${mlstfasta}.fasta --mlst_definitions profiles_csv --mlst_delimiter '_' --min_coverage $srst_min_gene_cov --max_divergence $srst_max_gene_divergence
-    #srst2 --input_pe $forward_trimmed_reads_for_srst2 $reverse_trimmed_reads_for_srst2 --output ${sampleNumber_srst2}_srst2 --mlst_delimiter '_' --min_coverage $srst_min_gene_cov --max_divergence $srst_max_gene_divergence
+    srst2 --output ${sampleIsolate_srst2}_srst2 --input_pe $forward_trimmed_reads_for_srst2 $reverse_trimmed_reads_for_srst2 --mlst_db ${mlstfasta}.fasta --mlst_definitions profiles_csv --mlst_delimiter '_' --min_coverage $srst_min_gene_cov --max_divergence $srst_max_gene_divergence
     """
 }
 
@@ -907,10 +911,11 @@ process '4A_quantify_reads' {
     file genome from genome_file
     file forwardTrimmedQuant
     file reverseTrimmedQuant
+    val sampleIsolateQuant
     file gtf from quantification_gtf
     value strandedness
   output:
-    set file("${dedup_bamfile.baseName}.vcf"), file("$dedup_bamfile") into vcf_bam_files
+    file "*" into salmon_results
 
   script:
   if( quantification == 'salmon' )
@@ -924,7 +929,7 @@ process '4A_quantify_reads' {
         -1 $forwardTrimmedQuant \\
         -2 $reverseTrimmedQuant \\
         $options.args \\
-        -o $forwardTrimmedQuant.baseName
+        -o $sampleIsolateQuant
     """
   else if( quantification == 'other-option' )
     """
