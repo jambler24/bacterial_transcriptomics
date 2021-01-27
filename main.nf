@@ -209,7 +209,7 @@ srst_max_gene_divergence    = params.srst_max_gene_divergence
 
 
 // From https://pubmlst.org/data/dbases.xml             <----------------------- This needs a tweak to be generalised
-mlst_species_srst2 = "Mycobacteria spp."
+mlst_species_srst2 = "mycobacteria"
 mlst_definitions_srst2 = "mycobacteria"
 mlst_seperator_srst2 = "_"
 
