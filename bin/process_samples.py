@@ -27,7 +27,7 @@ def main(inFile, fastq_dir, fast_test_mode):
 		else:
 			line = line.rstrip()
 			line = line.split(',')
-			if line[4].split('.')[-1] not in fastq_extensions:
+			if line[5].split('.')[-1] not in fastq_extensions:
 				print('SRA detected')
 
 				if fast_test_mode:
