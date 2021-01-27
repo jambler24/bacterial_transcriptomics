@@ -174,7 +174,7 @@ aligner                 = params.aligner
 SRAdir                  = params.SRAdir
 file_ext                = 'int'
 
-# Skip some QC not directly related to transcriptomics, move to QC pipeline
+// Skip some QC not directly related to transcriptomics, move to QC pipeline
 params.skip_qc          = false
 params.skip_rseqc       = false
 params.skip_preseq      = true
