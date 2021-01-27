@@ -181,6 +181,8 @@ params.skip_preseq      = true
 params.skip_multiqc     = false
 params.subsampFilesizeThreshold = 10000000000
 
+get_software_versions   = false
+
 
 // Read clipping and strandedness
 clip_r1                 = params.clip_r1
@@ -281,33 +283,34 @@ if(!params.bed12){
 
 
 /*
- * Parse software version numbers -- The scrape_software_versions.py needs updating
+ * Parse software version numbers -- The scrape_software_versions.py needs updating, REMOVING FOR NOW
  */
 
-process '0A_get_software_versions' {
+if(get_software_versions){
+    process '0A_get_software_versions' {
 
-    output:
-    file 'software_versions_mqc.yaml' into software_versions_yaml
+        output:
+        file 'software_versions_mqc.yaml' into software_versions_yaml
 
-    script:
-    """
-    echo $workflow.manifest.version &> v_ngi_rnaseq.txt
-    echo $workflow.nextflow.version &> v_nextflow.txt
-    fastqc --version &> v_fastqc.txt                        # Not working, works in Docker
-    cutadapt --version &> v_cutadapt.txt                    # Working
-    trim_galore --version &> v_trim_galore.txt              # Working
-    #bwa &> v_bwa.txt                                        # Working, not parsing
-    #preseq &> v_preseq.txt                                  # Not working libgsl.so.0: cannot open shared object file also in docker
-    read_duplication.py --version &> v_rseqc.txt            # Working
-    echo \$(bamCoverage --version 2>&1) > v_deeptools.txt       # unknown
-    picard MarkDuplicates --version &> v_markduplicates.txt  || true    # Not working, not in docker either
-    samtools --version &> v_samtools.txt                    # Working
-    multiqc --version &> v_multiqc.txt                      # Working
-    #scrape_software_versions.py &> software_versions_mqc.yaml   # unknown
-    echo "this" &> software_versions_mqc.yaml
-    """
+        script:
+        """
+        echo $workflow.manifest.version &> v_ngi_rnaseq.txt
+        echo $workflow.nextflow.version &> v_nextflow.txt
+        fastqc --version &> v_fastqc.txt                        # Not working, works in Docker
+        cutadapt --version &> v_cutadapt.txt                    # Working
+        trim_galore --version &> v_trim_galore.txt              # Working
+        #bwa &> v_bwa.txt                                        # Working, not parsing
+        #preseq &> v_preseq.txt                                  # Not working libgsl.so.0: cannot open shared object file also in docker
+        read_duplication.py --version &> v_rseqc.txt            # Working
+        echo \$(bamCoverage --version 2>&1) > v_deeptools.txt       # unknown
+        picard MarkDuplicates --version &> v_markduplicates.txt  || true    # Not working, not in docker either
+        samtools --version &> v_samtools.txt                    # Working
+        multiqc --version &> v_multiqc.txt                      # Working
+        #scrape_software_versions.py &> software_versions_mqc.yaml   # unknown
+        echo "this" &> software_versions_mqc.yaml
+        """
+    }
 }
-
 
 /*
  * ------------------------------------- ANALYSIS PART 1: Data preparation -------------------------------------
