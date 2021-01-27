@@ -912,7 +912,7 @@ process '4A_quantify_reads' {
     file forwardTrimmedQuant
     file reverseTrimmedQuant
     val sampleIsolateQuant
-    file gtf from quantification_gtf
+    file gtf from gtf_featureCounts
     value strandedness
   output:
     file "*" into salmon_results
