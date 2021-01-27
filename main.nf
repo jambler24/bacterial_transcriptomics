@@ -937,7 +937,7 @@ process '4A_quantify_reads' {
         --geneMap $gtf \\
         --threads $task.cpus \\
         -l A \\
-        -i $transcripts_index \\
+        -i transcripts_index \\
         $genome \\
         --validateMappings \\
         -1 $forwardTrimmedQuant \\
