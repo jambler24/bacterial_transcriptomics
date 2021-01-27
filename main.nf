@@ -43,6 +43,7 @@ def helpMessage() {
         --minQuality                  The minimum quality to be passed to vcf-tools for filtering variants.
         --vcf_qual_cutoff             Soon to be removed
         --aligner                     Currently bwa-mem, star
+        --quantification              Currently Salmon
         --srst_min_gene_cov           Minimum coverage for srst2 (default 90)
         --srst_max_gene_divergence    Maximum %divergence cutoff for gene reporting (default 10)
 
@@ -173,6 +174,7 @@ threads                 = 4
 aligner                 = params.aligner
 SRAdir                  = params.SRAdir
 file_ext                = 'int'
+quantification          = params.quantification
 
 // Skip some QC not directly related to transcriptomics, move to QC pipeline
 params.skip_qc          = false
