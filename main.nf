@@ -37,6 +37,7 @@ def helpMessage() {
         --genome                      The reference genome to be used in fasta format. Also acts as an outgroup.
         --gff                         Path to GFF3 file OR (see next arg)
         --gtf                         Path to GTF file
+        --transcripts                 Will try to automate transcripts extraction based on gff / gtf
         -profile                      Hardware config to use. local / uct_hex
 
     Optional arguments:
@@ -123,6 +124,10 @@ if ( params.genome == false ) {
     exit 1, "Must set a reference genome fasta file (--genome)"
 }
 
+if ( params.transcripts == false ) {
+    exit 1, "Must set a reference transcripts fasta file (--transcripts)"
+}
+
 if ( params.reads == false ) {
     exit 1, "Must set the path to the sample file (--reads) in csv format"
 }
@@ -157,10 +162,11 @@ if( !(workflow.runName ==~ /[a-z]+_[a-z]+/) ){
 log.info """\
 Bacterial transcriptomics pipeline v0.1
 ================================
-genome   : $params.genome
-reads    : $params.reads
-Output   : $params.outdir
-SRA dir  : $params.SRAdir
+genome      : $params.genome
+reads       : $params.reads
+transcripts : $params.transcripts
+Output      : $params.outdir
+SRA dir     : $params.SRAdir
 """
 
 /*
@@ -168,6 +174,7 @@ SRA dir  : $params.SRAdir
  */
 
 genome_file             = file(params.genome)
+transcripts_file        = file(params.transcripts)
 sample_sheet            = file(params.reads)
 reads_ch                = Channel.fromFilePairs(params.reads)
 threads                 = 4
@@ -914,6 +921,7 @@ process '4A_quantify_reads' {
 
   input:
     file genome from genome_file
+    file transcripts from transcripts_file
     file forwardTrimmedQuant
     file reverseTrimmedQuant
     val sampleIsolateQuant
@@ -924,11 +932,14 @@ process '4A_quantify_reads' {
   script:
   if( quantification == 'salmon' )
     """
+    salmon index -t $transcripts -i transcripts_index -k 31
     salmon quant \\
         --geneMap $gtf \\
         --threads $task.cpus \\
         -l A \\
+        -i $transcripts_index \\
         $genome \\
+        --validateMappings \\
         -1 $forwardTrimmedQuant \\
         -2 $reverseTrimmedQuant \\
         -o $sampleIsolateQuant
