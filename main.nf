@@ -931,7 +931,6 @@ process '4A_quantify_reads' {
         $genome \\
         -1 $forwardTrimmedQuant \\
         -2 $reverseTrimmedQuant \\
-        $options.args \\
         -o $sampleIsolateQuant
     """
   else if( quantification == 'other-option' )
