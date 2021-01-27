@@ -913,7 +913,6 @@ process '4A_quantify_reads' {
     file reverseTrimmedQuant
     val sampleIsolateQuant
     file gtf from gtf_featureCounts
-    value strandedness
   output:
     file "*" into salmon_results
 
@@ -923,7 +922,6 @@ process '4A_quantify_reads' {
     salmon quant \\
         --geneMap $gtf \\
         --threads $task.cpus \\
-        --libType=$strandedness \\
         -l A \\
         $genome \\
         -1 $forwardTrimmedQuant \\
