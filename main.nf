@@ -970,7 +970,6 @@ process '6A_multiqc' {
     file ('dupradar/*') from dupradar_results.collect().ifEmpty([])
     file ('software_versions/*') from software_versions_yaml
     file ('picard/*') from picard_results
-    file workflow_summary from create_workflow_summary(summary)
 
     output:
     file "*multiqc_report.html" into multiqc_report
