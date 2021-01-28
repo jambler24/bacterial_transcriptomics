@@ -587,6 +587,7 @@ process '2F_mark_duplicates' {
  * Process 2G: dupradar
  */
 
+/*
 process '2G_dupradar' {
     label 'low_memory'
     tag "${bamfile.baseName}"
@@ -614,6 +615,7 @@ process '2G_dupradar' {
     """
 }
 
+*/
 
 /*
  * ------------------------------------ ANALYSIS PART 3: Virulence and DB analysis ------------------------------------
