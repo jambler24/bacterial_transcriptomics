@@ -827,7 +827,7 @@ if( params.plasmid_db ) {
 
 
 process '4A_quantify_reads' {
-
+  label 'high_memory'
   publishDir "${params.outdir}/salmon", mode: "link", overwrite: true
 
   input:
