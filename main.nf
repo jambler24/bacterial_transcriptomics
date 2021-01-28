@@ -678,45 +678,11 @@ process '2G_dupradar' {
 /*
  * ------------------------------------ ANALYSIS PART 3: Virulence and DB analysis ------------------------------------
  *
- * Process 3A: srst2 (run per sample)
+ * Process 3A: srst2 (run per sample) -------------------------- Removed due to python incompatibility
  * https://github.com/kviljoen/uct-srst2/blob/master/main.nf
  */
 
-process '3A_srst2' {
-    tag { "srst2.${sampleNumber_srst2}" }
-    publishDir "${params.outdir}/srst2_mlst", mode: "copy"
-    label 'high_memory'
 
-    input:
-    file forward_trimmed_reads_for_srst2
-    file reverse_trimmed_reads_for_srst2
-    val sampleNumber_srst2
-    val sampleIsolate_srst2
-    val srst_min_gene_cov
-    val srst_max_gene_divergence
-    val mlst_species_srst2
-    val mlst_definitions_srst2
-    val mlst_seperator_srst2
-
-    output:
-    file("${sampleIsolate_srst2}_srst2__mlst*")
-
-    script:
-    geneDB = params.gene_db ? "--gene_db $gene_db" : ''
-    mlstDB = params.mlst_db ? "--mlst_db $mlst_db" : ''
-    mlstdef = params.mlst_db ? "--mlst_definitions $mlst_definitions" : ''
-    mlstdelim = params.mlst_db ? "--mlst_delimiter $params.mlst_delimiter" : ''
-    mlstfasta = mlst_species_srst2.replace(" ", "_")
-
-    """
-    # /samtools-0.1.18/
-    export SRST2_SAMTOOLS="/samtools-0.1.18/samtools"
-    which python
-    python --version
-    getmlst.py --species "${mlst_species_srst2}"
-    srst2 --output ${sampleIsolate_srst2}_srst2 --input_pe $forward_trimmed_reads_for_srst2 $reverse_trimmed_reads_for_srst2 --mlst_db ${mlstfasta}.fasta --mlst_definitions profiles_csv --mlst_delimiter '_' --min_coverage $srst_min_gene_cov --max_divergence $srst_max_gene_divergence
-    """
-}
 
 /*
  * Process 3B: AMR Resistance
