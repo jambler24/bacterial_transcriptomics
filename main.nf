@@ -499,8 +499,11 @@ process '1F_trim_galore' {
 
         rename 's/fastq.gz/fq.gz/' *.fastq.gz
 
-        rename 's/_val_1/_R1_001/' *.fq.gz
-        rename 's/_val_2/_R2_001/' *.fq.gz
+        #rename 's/_val_1/_R1_001/' *.fq.gz
+        #rename 's/_val_2/_R2_001/' *.fq.gz
+
+        rename 's/_trimmed/.trimmed/' *.fq.gz
+
         """
     }
 }
