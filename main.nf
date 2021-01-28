@@ -944,7 +944,6 @@ process '4A_quantify_reads' {
         -l A \\
         -i transcripts_index \\
         $genome \\
-        --validateMappings \\
         -1 $forwardTrimmedQuant \\
         -2 $reverseTrimmedQuant \\
         -o $sampleIsolateQuant
