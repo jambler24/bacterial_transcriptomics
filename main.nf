@@ -711,7 +711,6 @@ process '3A_srst2' {
     """
     # /samtools-0.1.18/
     export SRST2_SAMTOOLS="/samtools-0.1.18/samtools"
-    ln -s /usr/bin/python2 ~/bin/python
     which python
     python --version
     getmlst.py --species "${mlst_species_srst2}"
