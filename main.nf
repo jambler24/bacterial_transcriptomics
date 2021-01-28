@@ -552,70 +552,10 @@ process '2A_read_mapping' {
 
 
 /*
- * Process 2B: RSeQC analysis -- Appears working
+ * Process 2B: RSeQC analysis -- Removed due to python requirements
  */
 
-process '2B_rseqc' {
-    label 'high_memory'
-    tag "${bam_rseqc.baseName - '.sorted'}"
-    publishDir "${params.outdir}/rseqc" , mode: 'copy',
-        saveAs: {filename ->
-                 if (filename.indexOf("bam_stat.txt") > 0)                      "bam_stat/$filename"
-            else if (filename.indexOf("infer_experiment.txt") > 0)              "infer_experiment/$filename"
-            else if (filename.indexOf("read_distribution.txt") > 0)             "read_distribution/$filename"
-            else if (filename.indexOf("read_duplication.DupRate_plot.pdf") > 0) "read_duplication/$filename"
-            else if (filename.indexOf("read_duplication.DupRate_plot.r") > 0)   "read_duplication/rscripts/$filename"
-            else if (filename.indexOf("read_duplication.pos.DupRate.xls") > 0)  "read_duplication/dup_pos/$filename"
-            else if (filename.indexOf("read_duplication.seq.DupRate.xls") > 0)  "read_duplication/dup_seq/$filename"
-            else if (filename.indexOf("RPKM_saturation.eRPKM.xls") > 0)         "RPKM_saturation/rpkm/$filename"
-            else if (filename.indexOf("RPKM_saturation.rawCount.xls") > 0)      "RPKM_saturation/counts/$filename"
-            else if (filename.indexOf("RPKM_saturation.saturation.pdf") > 0)    "RPKM_saturation/$filename"
-            else if (filename.indexOf("RPKM_saturation.saturation.r") > 0)      "RPKM_saturation/rscripts/$filename"
-            else if (filename.indexOf("inner_distance.txt") > 0)                "inner_distance/$filename"
-            else if (filename.indexOf("inner_distance_freq.txt") > 0)           "inner_distance/data/$filename"
-            else if (filename.indexOf("inner_distance_plot.r") > 0)             "inner_distance/rscripts/$filename"
-            else if (filename.indexOf("inner_distance_plot.pdf") > 0)           "inner_distance/plots/$filename"
-            else if (filename.indexOf("junction_plot.r") > 0)                   "junction_annotation/rscripts/$filename"
-            else if (filename.indexOf("junction.xls") > 0)                      "junction_annotation/data/$filename"
-            else if (filename.indexOf("splice_events.pdf") > 0)                 "junction_annotation/events/$filename"
-            else if (filename.indexOf("splice_junction.pdf") > 0)               "junction_annotation/junctions/$filename"
-            else if (filename.indexOf("junctionSaturation_plot.pdf") > 0)       "junction_saturation/$filename"
-            else if (filename.indexOf("junctionSaturation_plot.r") > 0)         "junction_saturation/rscripts/$filename"
-            else if (filename.indexOf("geneBodyCoverage.curves.pdf") > 0)       "geneBodyCoverage/$filename"
-            else if (filename.indexOf("geneBodyCoverage.r") > 0)                "geneBodyCoverage/rscripts/$filename"
-            else if (filename.indexOf("geneBodyCoverage.txt") > 0)              "geneBodyCoverage/data/$filename"
-            else if (filename.indexOf("log.txt") > -1) false
-            else filename
-        }
 
-    when:
-    !params.skip_qc && !params.skip_rseqc
-
-    input:
-    file bam_rseqc
-    file index from bamindexfiles_rseqc
-    file bed12 from bed_rseqc.collect()
-
-    output:
-    file "*.{txt,pdf,r,xls}" into rseqc_results
-
-    script:
-    """
-    infer_experiment.py -i $bam_rseqc -r $bed12 > ${bam_rseqc.baseName}.infer_experiment.txt
-    bam_stat.py -i $bam_rseqc 2> ${bam_rseqc.baseName}.bam_stat.txt
-    inner_distance.py -i $bam_rseqc -o ${bam_rseqc.baseName}.rseqc -r $bed12
-    read_distribution.py -i $bam_rseqc -r $bed12 > ${bam_rseqc.baseName}.read_distribution.txt
-    read_duplication.py -i $bam_rseqc -o ${bam_rseqc.baseName}.read_duplication
-
-    geneBody_coverage.py -i $bam_rseqc -o ${bam_rseqc.baseName}.rseqc -r $bed12
-    mv log.txt ${bam_rseqc.baseName}.rseqc.log.txt
-
-    # Not applicable for bacteria
-    #junction_annotation.py -i $bam_rseqc -o ${bam_rseqc.baseName}.rseqc -r $bed12
-    #junction_saturation.py -i $bam_rseqc -o ${bam_rseqc.baseName}.rseqc -r $bed12 2> ${bam_rseqc.baseName}.junction_annotation_log.txt
-
-    """
-}
 
 
 
@@ -951,7 +891,7 @@ process '6A_multiqc' {
     file multiqc_config from ch_multiqc_config
     file (fastqc:'fastqc/*') from fastqc_results.collect().ifEmpty([])
     file ('trimgalore/*') from trimgalore_results.collect()
-    file ('rseqc/*') from rseqc_results.collect().ifEmpty([])
+    //file ('rseqc/*') from rseqc_results.collect().ifEmpty([])
     file ('dupradar/*') from dupradar_results.collect().ifEmpty([])
     //file ('software_versions/*') from software_versions_yaml
     file ('picard/*') from picard_results
