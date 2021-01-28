@@ -209,7 +209,7 @@ srst_max_gene_divergence    = params.srst_max_gene_divergence
 
 
 // From https://pubmlst.org/data/dbases.xml             <----------------------- This needs a tweak to be generalised
-mlst_species_srst2 = "mycobacteria"
+mlst_species_srst2 = "Mycobacteria spp."
 mlst_definitions_srst2 = "mycobacteria"
 mlst_seperator_srst2 = "_"
 
@@ -711,7 +711,7 @@ process '3A_srst2' {
     """
     # /samtools-0.1.18/
     export SRST2_SAMTOOLS="/samtools-0.1.18/samtools"
-    getmlst.py --species "${mlst_species_srst2}"
+    python2.7 getmlst.py --species "${mlst_species_srst2}"
     srst2 --output ${sampleIsolate_srst2}_srst2 --input_pe $forward_trimmed_reads_for_srst2 $reverse_trimmed_reads_for_srst2 --mlst_db ${mlstfasta}.fasta --mlst_definitions profiles_csv --mlst_delimiter '_' --min_coverage $srst_min_gene_cov --max_divergence $srst_max_gene_divergence
     """
 }
