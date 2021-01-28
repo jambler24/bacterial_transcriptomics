@@ -894,7 +894,7 @@ process '6A_multiqc' {
     file (fastqc:'fastqc/*') from fastqc_results.collect().ifEmpty([])
     file ('trimgalore/*') from trimgalore_results.collect()
     //file ('rseqc/*') from rseqc_results.collect().ifEmpty([])
-    file ('dupradar/*') from dupradar_results.collect().ifEmpty([])
+    //file ('dupradar/*') from dupradar_results.collect().ifEmpty([])
     //file ('software_versions/*') from software_versions_yaml
     file ('picard/*') from picard_results
 
