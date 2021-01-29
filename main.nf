@@ -451,7 +451,7 @@ newSampleSheetFastQC
  */
 
 process '1F_trim_galore' {
-    label 'low_memory'
+    label 'high_memory'
     tag "$name"
     publishDir "${params.outdir}/trim_galore", mode: 'copy',
         saveAs: {filename ->
