@@ -515,25 +515,13 @@ process '4A_quantify_reads' {
 
   input:
     set val(number), file(R1_reads), file(R2_reads) from QuantInput
-    set genome_fasta, genome_dict from genome_quant_ch
-    file transcripts from transcripts_file
-    file gtf from gtf_featureCounts
   output:
     file "*" into salmon_results
 
   script:
   if( quantification == 'salmon' )
     """
-    salmon index -t $transcripts -i transcripts_index -k 31
-    salmon quant \\
-        --geneMap $gtf \\
-        --threads $task.cpus \\
-        -l A \\
-        -i transcripts_index \\
-        $genome_fasta \\
-        -1 $R1_reads \\
-        -2 $R2_reads \\
-        -o $number
+    echo "this" > this.txt
     """
   else if( quantification == 'other-option' )
     """
