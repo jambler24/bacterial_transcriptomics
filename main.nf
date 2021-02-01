@@ -467,12 +467,10 @@ process '1F_trim_galore' {
 
     output:
 
-    set val(number), file("*_R1_001.fq.gz"), file("*_R2_001.fq.gz"), into QuantInput
-
+    set file("*_R1_001.fq.gz"), file("*_R2_001.fq.gz"), into QuantInput
 
     file "*trimming_report.txt" into trimgalore_results
     file "*_fastqc.{zip,html}" into trimgalore_fastqc_reports
-
 
     script:
     c_r1 = clip_r1 > 0 ? "--clip_r1 ${clip_r1}" : ''
@@ -537,7 +535,7 @@ process '4A_quantify_reads' {
         $genome \\
         -1 $R1_reads \\
         -2 $R2_reads \\
-        -o $sample
+        -o ${R1_reads.baseName}
     """
   else if( quantification == 'other-option' )
     """
