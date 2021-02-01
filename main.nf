@@ -525,7 +525,16 @@ process '4A_quantify_reads' {
   script:
   if( quantification == 'salmon' )
     """
-    echo "this" > this.txt
+    salmon index -t $transcripts -i transcripts_index -k 31
+    salmon quant \\
+        --geneMap $gtf \\
+        --threads $task.cpus \\
+        -l A \\
+        -i transcripts_index \\
+        $genome_fasta \\
+        -1 $R1_reads \\
+        -2 $R2_reads \\
+        -o $number
     """
   else if( quantification == 'other-option' )
     """
