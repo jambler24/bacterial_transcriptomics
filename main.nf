@@ -518,7 +518,6 @@ process '4A_quantify_reads' {
     set val(number), file(R1_reads), file(R2_reads) from QuantInput
     set genome_fasta, genome_dict from genome_quant_ch
     file transcripts from transcripts_file
-    file gtf from gtf_featureCounts
   output:
     file "*" into salmon_results
 
@@ -527,7 +526,7 @@ process '4A_quantify_reads' {
     """
     salmon index -t $transcripts -i transcripts_index -k 31
     salmon quant \\
-        --geneMap $gtf \\
+        --geneMap $genome_fasta \\
         --threads $task.cpus \\
         -l A \\
         -i transcripts_index \\
