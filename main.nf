@@ -354,6 +354,7 @@ process '1B_prepare_genome_picard' {
       file genome from genome_file
   output:
       file "${genome.baseName}.dict" into genome_dict_ch
+      set file(genome), file("${genome.baseName}.dict") into genome_quant_ch
 
   script:
   """
@@ -513,9 +514,8 @@ process '4A_quantify_reads' {
   publishDir "${params.outdir}/salmon", mode: "link", overwrite: true
 
   input:
-
     set val(number), file(R1_reads), file(R2_reads) from QuantInput
-    file genome from genome_file
+    set genome_fasta, genome_dict from genome_quant_ch
     file transcripts from transcripts_file
     file gtf from gtf_featureCounts
   output:
@@ -530,7 +530,7 @@ process '4A_quantify_reads' {
         --threads $task.cpus \\
         -l A \\
         -i transcripts_index \\
-        $genome \\
+        $genome_fasta \\
         -1 $R1_reads \\
         -2 $R2_reads \\
         -o $number
