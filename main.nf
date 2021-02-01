@@ -254,9 +254,10 @@ if(params.gff){
 
   output:
 
-  file "${gtf.baseName}.gtf" into gtf_makeSTARindex, gtf_makeBED12, gtf_star, gtf_dupradar, gtf_featureCounts
+  file "${gtf.baseName}.gtf" into gtf_makeSTARindex, gtf_makeBED12, gtf_star
   file "${gtf.baseName}.gff" into snpeff_gff
-
+  file "${gtf.baseName}.gtf" into gtf_featureCounts
+  file ${gtf.baseName}.gtf" into gtf_dupradar
   script:
   """
   gffread $gtf -o ${gtf.baseName}.gff
