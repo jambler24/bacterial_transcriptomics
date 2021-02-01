@@ -467,7 +467,7 @@ process '1F_trim_galore' {
 
     output:
 
-    set number, file("*_R1_001.fq.gz"), file("*_R2_001.fq.gz"), into QuantInput
+    set val(number), file("*_R1_001.fq.gz"), file("*_R2_001.fq.gz"), into QuantInput
 
 
     file "*trimming_report.txt" into trimgalore_results
