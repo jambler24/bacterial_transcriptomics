@@ -514,7 +514,7 @@ process '4A_quantify_reads' {
 
   input:
 
-    set sample, file(R1_reads), file(R2_reads) from QuantInput
+    set file(R1_reads), file(R2_reads) from QuantInput
     file genome from genome_file
     file transcripts from transcripts_file
     file gtf from gtf_featureCounts
@@ -533,7 +533,7 @@ process '4A_quantify_reads' {
         $genome \\
         -1 $R1_reads \\
         -2 $R2_reads \\
-        -o ${R1_reads.baseName}
+        -o ${R1_reads.baseName.baseName}
     """
   else if( quantification == 'other-option' )
     """
