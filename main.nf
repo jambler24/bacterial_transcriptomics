@@ -466,21 +466,13 @@ process '1F_trim_galore' {
     set number, file(R1), file(R2), isolate from newSampleChannel
 
     output:
-    file "*_R1_001.fq.gz" into forwardTrimmedAlignment
-    file "*_R2_001.fq.gz" into reverseTrimmedAlignment
-    file "*_R1_001.fq.gz" into forwardTrimmedQuant
-    file "*_R2_001.fq.gz" into reverseTrimmedQuant
-    file "*_R1_001.fq.gz" into forward_trimmed_reads_for_srst2
-    file "*_R2_001.fq.gz" into reverse_trimmed_reads_for_srst2
+
+    set number, file("*_R1_001.fq.gz"), file("*_R2_001.fq.gz"), into QuantInput
+
 
     file "*trimming_report.txt" into trimgalore_results
     file "*_fastqc.{zip,html}" into trimgalore_fastqc_reports
-    val "$number" into sampleNumber_srst2
-    val "$number" into sampleNumber
-    val "$isolate" into sampleIsolate
-    val "$isolate" into sampleIsolateQuant
-    val "$isolate" into sampleIsolate_srst2
-    set number, file("*_R1_001.fq.gz"), file("*_R2_001.fq.gz") into vf_read_pairs
+
 
     script:
     c_r1 = clip_r1 > 0 ? "--clip_r1 ${clip_r1}" : ''
@@ -509,315 +501,6 @@ process '1F_trim_galore' {
 }
 
 
-/*
- * ------------------------------------- ANALYSIS PART 2: Alignment -------------------------------------
- *
- * Process 2B: Align reads to the reference genome  ------------------------------------- EDIT TO INCLUDE OTHER ALIGNERS
- *
- */
-
-process '2A_read_mapping' {
-  input:
-    file forwardTrimmedAlignment
-    file reverseTrimmedAlignment
-    val sampleNumber
-    val sampleIsolate
-    file genome from genome_file
-    file genome_bwa_amb
-    file genome_bwa_ann
-    file genome_bwa_bwt
-    file genome_bwa_pac
-    file genome_bwa_sa
-  output:
-    file "sample_${sampleIsolate}.sorted.bam" into bamfiles
-    file "sample_${sampleIsolate}.sorted.bai" into bamindexfiles
-    file "sample_${sampleIsolate}.sorted.bam" into bam_rseqc
-    file "sample_${sampleIsolate}.sorted.bai" into bamindexfiles_rseqc
-    file "sample_${sampleIsolate}.sorted.bam" into bam_preseq
-    file "sample_${sampleIsolate}.sorted.bam" into bam_forSubsamp
-    file "sample_${sampleIsolate}.sorted.bam" into bam_skipSubsamp
-    file "sample_${sampleIsolate}.sorted.bam" into bam_featurecounts
-  script:
-  if( aligner == 'bwa-mem' )
-    """
-    bwa mem $genome $forwardTrimmedAlignment $reverseTrimmedAlignment | samtools sort -O BAM -o sample_${sampleIsolate}.sorted.bam
-    samtools index sample_${sampleIsolate}.sorted.bam sample_${sampleIsolate}.sorted.bai
-    """
-
-  else
-    error "Invalid aligner: ${aligner}"
-
-}
-
-
-
-/*
- * Process 2B: RSeQC analysis -- Removed due to python requirements
- */
-
-
-
-
-
-
-/*
- * Process 2F: Mark duplicate reads  --- Edit file naming
- */
-
-process '2F_mark_duplicates' {
-  label 'high_memory'
-  publishDir "${params.outdir}/picard", mode: "copy"
-
-  input:
-    file sample_bam from bamfiles
-  output:
-    set file("${sample_bam.baseName}.dedup.bam"), file("${sample_bam.baseName}.dedup.bam.bai") into dedup_bamfiles
-    set file("${sample_bam.baseName}.dedup.bam"), file("${sample_bam.baseName}.dedup.bam.bai") into dupradar_bamfiles
-    file "${sample_bam.baseName}.txt" into picard_results
-  script:
-    """
-    picard -Xmx16g MarkDuplicates INPUT=$sample_bam OUTPUT=${sample_bam.baseName}.dedup.bam METRICS_FILE=${sample_bam.baseName}.txt ASSUME_SORTED=true REMOVE_DUPLICATES=false
-    samtools index ${sample_bam.baseName}.dedup.bam
-    """
-}
-
-
-
-/*
- * Process 2G: dupradar
- */
-
-/*
-process '2G_dupradar' {
-    label 'low_memory'
-    tag "${bamfile.baseName}"
-    publishDir "${params.outdir}/dupradar", mode: "link", overwrite: true
-
-    input:
-      set file(bamfile), file(bamindex) from dupradar_bamfiles
-      file gtf from gtf_dupradar
-    output:
-      file "*.{pdf,txt}" into dupradar_results
-
-    script:
-
-    // This script was bundled with the nfcore/rnaseq pipeline in nfcore/rnaseq/bin/
-    def dupradar_direction = 0
-    if (forward_stranded && !unstranded) {
-        dupradar_direction = 1
-    } else if (reverse_stranded && !unstranded){
-        dupradar_direction = 2
-    }
-    def paired = params.singleEnd ? 'single' :  'paired'
-
-    """
-    dupRadar.r $bamfile $gtf $dupradar_direction $paired ${task.cpus}
-    """
-}
-
-*/
-
-/*
- * ------------------------------------ ANALYSIS PART 3: Virulence and DB analysis ------------------------------------
- *
- * Process 3A: srst2 (run per sample) -------------------------- Removed due to python incompatibility
- * https://github.com/kviljoen/uct-srst2/blob/master/main.nf
- */
-
-
-
-/*
- * Process 3B: AMR Resistance
- */
-
-if( params.amr_db ) {
-    /*
-     * Build resistance database index with Bowtie2
-     */
-    process '3B_BuildAMRIndex' {
-        tag { "${amr_db.baseName}" }
-
-        input:
-            file amr_db
-
-            output:
-            file 'amr.index*' into amr_index
-
-            """
-            bowtie2-build $amr_db amr.index --threads ${threads}
-            """
-    }
-
-    /*
-         * Align reads to resistance database with Bowtie2
-         */
-    process '3B_AMRAlignment' {
-            publishDir "${params.outdir}/Alignment", pattern: "*.bam"
-
-            tag { dataset_id }
-
-            input:
-            set dataset_id, file(forward), file(reverse) from amr_read_pairs
-            file index from amr_index.first()
-
-            output:
-            set dataset_id, file("${dataset_id}_amr_alignment.sam") into amr_sam_files
-            set dataset_id, file("${dataset_id}_amr_alignment.bam") into amr_bam_files
-
-            """
-            bowtie2 -p ${threads} -x amr.index -1 $forward -2 $reverse -S ${dataset_id}_amr_alignment.sam
-            samtools view -bS ${dataset_id}_amr_alignment.sam | samtools sort -@ ${threads} -o ${dataset_id}_amr_alignment.bam
-            """
-    }
-
-    process '3B_AMRResistome' {
-            publishDir "${params.outdir}/Resistome"
-
-            tag { dataset_id }
-
-            input:
-            file amr_db
-            set dataset_id, file(amr_sam) from amr_sam_files
-
-            output:
-            set dataset_id, file("${dataset_id}_amr_gene_resistome.tsv") into amr_gene_level
-
-            """
-            csa -ref_fp ${vf_db} -sam_fp ${vf_sam} -min 5 -max 100 -skip 5 -t 0 -samples 1 -out_fp "${dataset_id}_amr_gene_resistome.tsv"
-            """
-    }
-}
-
-/*
- * Process 3C: Virulence factor analysis
- */
-
-if( params.vf_db ) {
-    /*
-    * Build resistance database index with Bowtie2
-    */
-    process '3C_BuildVFIndex' {
-        tag { "Building index" }
-
-        input:
-
-        output:
-        file 'vf.index*' into vf_index
-        file 'VFDB_setB_nt.fa' into vf_fa
-
-        """
-        wget http://www.mgc.ac.cn/VFs/Down/VFDB_setB_nt.fas.gz
-        gunzip VFDB_setB_nt.fas.gz
-        mv VFDB_setB_nt.fas VFDB_setB_nt.fa
-        sed -i 's/(/_/g' VFDB_setB_nt.fa
-        sed -i 's/)/_/g' VFDB_setB_nt.fa
-        bowtie2-build VFDB_setB_nt.fa vf.index
-        """
-    }
-    /*
-         * Align reads to virulence factor database with Bowtie2
-         */
-    process '3C_VFAlignment' {
-            publishDir "${params.outdir}/Alignment", pattern: "*.bam"
-
-            tag { dataset_id }
-
-            input:
-            set dataset_id, file(forward), file(reverse) from vf_read_pairs
-            file index from vf_index.first()
-            file vf_fasta from vf_fa
-
-            output:
-            set dataset_id, file("${dataset_id}_vf_alignment.sam") into vf_sam_files
-            set dataset_id, file("${dataset_id}_vf_alignment.bam") into vf_bam_files
-
-            """
-            bowtie2 -p ${threads} -x vf.index -1 $forward -2 $reverse -S ${dataset_id}_vf_alignment.sam
-            samtools view -bS ${dataset_id}_vf_alignment.sam | samtools sort -@ ${threads} -o ${dataset_id}_vf_alignment.bam
-            """
-    }
-
-    process '3C_VFResistome' {
-            publishDir "${params.outdir}/Resistome"
-
-            label 'high_memory'
-            tag { dataset_id }
-
-            input:
-            file vf_db from vf_fa
-            set dataset_id, file(vf_bam) from vf_bam_files
-
-            output:
-            set dataset_id, file("${dataset_id}_raw_wgs_metrics.txt") into vf_gene_level
-
-            """
-            picard CollectWgsMetrics I=$vf_bam O=${dataset_id}_raw_wgs_metrics.txt R=${vf_db} INCLUDE_BQ_HISTOGRAM=true
-            """
-    }
-}
-
-/*
- * Process 3D: Plasmid resistome analysis - CHECK WHERE THESE FILES ARE PULLED FROM
- */
-
-if( params.plasmid_db ) {
-    /*
-         * Build plasmid index with Bowtie2
-         */
-    process '3D_BuildPlasmidIndex' {
-        tag { "${plasmid_db.baseName}" }
-
-        input:
-            file plasmid_db
-
-            output:
-            file 'plasmid.index*' into plasmid_index
-
-            """
-            bowtie2-build $plasmid_db plasmid.index --threads ${threads}
-            """
-    }
-    /*
-         * Align reads to plasmid database with Bowtie2
-         */
-    process '3D_PlasmidAlignment' {
-            publishDir "${params.outdir}/Alignment", pattern: "*.bam"
-
-            tag { dataset_id }
-
-            input:
-            set dataset_id, file(forward), file(reverse) from plasmid_read_pairs
-            file index from plasmid_index.first()
-
-            output:
-            set dataset_id, file("${dataset_id}_plasmid_alignment.sam") into plasmid_sam_files
-            set dataset_id, file("${dataset_id}_plasmid_alignment.bam") into plasmid_bam_files
-
-            """
-            bowtie2 -p ${threads} -x plasmid.index -1 $forward -2 $reverse -S ${dataset_id}_plasmid_alignment.sam
-            samtools view -bS ${dataset_id}_plasmid_alignment.sam | samtools sort -@ ${threads} -o ${dataset_id}_plasmid_alignment.bam
-            """
-    }
-
-    process '3D_PlasmidResistome' {
-            publishDir "${params.outdir}/Resistome"
-
-            tag { dataset_id }
-
-            input:
-            file plasmid_db
-            set dataset_id, file(plasmid_sam) from plasmid_sam_files
-
-            output:
-            set dataset_id, file("${dataset_id}_plasmid_gene_resistome.tsv") into plasmid_gene_level
-
-            """
-            csa -ref_fp ${plasmid_db} -sam_fp ${plasmid_sam} -min 5 -max 100 -skip 5 -t 0 -samples 1 -out_fp "${dataset_id}_plasmid_gene_resistome.tsv"
-            """
-    }
-}
-
-
 
 
 /*
@@ -833,11 +516,11 @@ process '4A_quantify_reads' {
   publishDir "${params.outdir}/salmon", mode: "link", overwrite: true
 
   input:
+
+    set sample, file(R1_reads), file(R2_reads) from QuantInput
+
     file genome from genome_file
     file transcripts from transcripts_file
-    file forwardTrimmedQuant
-    file reverseTrimmedQuant
-    val sampleIsolateQuant
     file gtf from gtf_featureCounts
   output:
     file "*" into salmon_results
@@ -852,9 +535,9 @@ process '4A_quantify_reads' {
         -l A \\
         -i transcripts_index \\
         $genome \\
-        -1 $forwardTrimmedQuant \\
-        -2 $reverseTrimmedQuant \\
-        -o $sampleIsolateQuant
+        -1 $R1_reads \\
+        -2 $R2_reads \\
+        -o $sample
     """
   else if( quantification == 'other-option' )
     """
@@ -865,16 +548,6 @@ process '4A_quantify_reads' {
 }
 
 
-/*
- *  END OF PART 4
- *********/
-
-
-
-
-/*
- *  END OF PART 5
- *********/
 
 
 /*
@@ -896,7 +569,7 @@ process '6A_multiqc' {
     //file ('rseqc/*') from rseqc_results.collect().ifEmpty([])
     //file ('dupradar/*') from dupradar_results.collect().ifEmpty([])
     //file ('software_versions/*') from software_versions_yaml
-    file ('picard/*') from picard_results
+    //file ('picard/*') from picard_results
 
     output:
     file "*multiqc_report.html" into multiqc_report
