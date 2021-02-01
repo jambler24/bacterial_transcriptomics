@@ -463,10 +463,10 @@ process '1F_trim_galore' {
         }
 
     input:
-        set number, file(R1), file(R2), isolate from newSampleChannel
+        set val(number), file(R1), file(R2), isolate from newSampleChannel
 
     output:
-        set file("*_R1_001.fq.gz"), file("*_R2_001.fq.gz") into QuantInput
+        set val(number), file("*_R1_001.fq.gz"), file("*_R2_001.fq.gz") into QuantInput
 
         file "*trimming_report.txt" into trimgalore_results
         file "*_fastqc.{zip,html}" into trimgalore_fastqc_reports
@@ -514,7 +514,7 @@ process '4A_quantify_reads' {
 
   input:
 
-    set file(R1_reads), file(R2_reads) from QuantInput
+    set val(number), file(R1_reads), file(R2_reads) from QuantInput
     file genome from genome_file
     file transcripts from transcripts_file
     file gtf from gtf_featureCounts
@@ -533,7 +533,7 @@ process '4A_quantify_reads' {
         $genome \\
         -1 $R1_reads \\
         -2 $R2_reads \\
-        -o ${R1_reads.baseName.baseName}
+        -o $number
     """
   else if( quantification == 'other-option' )
     """
