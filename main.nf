@@ -463,14 +463,13 @@ process '1F_trim_galore' {
         }
 
     input:
-    set number, file(R1), file(R2), isolate from newSampleChannel
+        set number, file(R1), file(R2), isolate from newSampleChannel
 
     output:
+        set file("*_R1_001.fq.gz"), file("*_R2_001.fq.gz") into QuantInput
 
-    set file("*_R1_001.fq.gz"), file("*_R2_001.fq.gz"), into QuantInput
-
-    file "*trimming_report.txt" into trimgalore_results
-    file "*_fastqc.{zip,html}" into trimgalore_fastqc_reports
+        file "*trimming_report.txt" into trimgalore_results
+        file "*_fastqc.{zip,html}" into trimgalore_fastqc_reports
 
     script:
     c_r1 = clip_r1 > 0 ? "--clip_r1 ${clip_r1}" : ''
@@ -516,7 +515,6 @@ process '4A_quantify_reads' {
   input:
 
     set sample, file(R1_reads), file(R2_reads) from QuantInput
-
     file genome from genome_file
     file transcripts from transcripts_file
     file gtf from gtf_featureCounts
