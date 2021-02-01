@@ -516,6 +516,7 @@ process '4A_quantify_reads' {
   input:
     set val(number), file(R1_reads), file(R2_reads) from QuantInput
     set genome_fasta, genome_dict from genome_quant_ch
+    file transcripts from transcripts_file
   output:
     file "*" into salmon_results
 
