@@ -102,10 +102,6 @@ RUN conda install -c hcc resistomeanalyzer
 RUN conda install -c bioconda trimmomatic
 RUN conda install -c bioconda fastqc
 RUN conda install -c bioconda picard=2.18.27
-RUN conda install -c bioconda conda-forge::r-data.table=1.12.0
-RUN conda install -c bioconda conda-forge::r-gplots=3.0.1.1
-RUN conda install -c bioconda conda-forge::r-markdown=0.9
-RUN conda install -c bioconda csvtk=0.17.0
 RUN conda install -c conda-forge gsl
 RUN conda install -c bioconda trim-galore
 RUN conda install -c bioconda cutadapt
@@ -120,13 +116,20 @@ RUN conda install -c bioconda star
 RUN conda install -c bioconda bwa
 
 RUN conda install -c bioconda salmon
-RUN conda install -c bioconda rsem
 RUN conda install -c bioconda stringtie
-RUN conda install -c bioconda bioconductor-rsubread
 RUN conda install -c bioconda bowtie2
-
 RUN conda install -c bioconda bedtools
+
+RUN conda install -c bioconda sortmerna
+
+# R related nonsense
 #RUN conda install -c bioconda bioconductor-deseq2
+RUN conda install -c bioconda conda-forge::r-data.table=1.12.0
+RUN conda install -c bioconda conda-forge::r-gplots=3.0.1.1
+RUN conda install -c bioconda conda-forge::r-markdown=0.9
+RUN conda install -c bioconda rsem
+RUN conda install -c bioconda bioconductor-rsubread
+
 
 # Visualisation
 RUN conda install -c bioconda circos
