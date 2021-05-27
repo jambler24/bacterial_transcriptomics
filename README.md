@@ -56,3 +56,26 @@ This must be exported to a csv file, with a comma ',' separating the columns:
     2,genomic,2,wgs_sample_1,path/to/reads/reads_R1.fq,path/to/reads/reads_R2.fq
     ...
     10,genomic,1,H37Rv,SRR5989977
+    
+    
+## R analysis 
+
+Downstream analysis in R with Deseq2 requires a study design file. 
+
+The study design file is formatted like so:
+
+    run  Unique_ID   phenotype       repeat
+    10  19119R-03-01        Wt      1
+    6  19119R-03-02 Wt      2
+    12  19119R-03-03        Wt      3
+    3  19119R-03-04 10X_DWD 1
+    8  19119R-03-05 10X_DWD 2
+    2  19119R-03-06 10X_DWD 3
+    7  19119R-03-07 1X_DWD  1
+    1  19119R-03-08 1X_DWD  2
+    4  19119R-03-09 1X_DWD  3
+    11  19119R-03-10        10X_GGT 1
+    5  19119R-03-11 10X_GGT 2
+    9  19119R-03-12 10X_GGT 3
+
+Where the run column is the name of the output folder produced by salmon that contains the quant.sf files
