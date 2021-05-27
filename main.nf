@@ -43,7 +43,6 @@ def helpMessage() {
     Optional arguments:
         --minQuality                  The minimum quality to be passed to vcf-tools for filtering variants.
         --vcf_qual_cutoff             Soon to be removed
-        --aligner                     Currently bwa-mem, star
         --quantification              Currently Salmon
         --srst_min_gene_cov           Minimum coverage for srst2 (default 90)
         --srst_max_gene_divergence    Maximum %divergence cutoff for gene reporting (default 10)
@@ -51,7 +50,6 @@ def helpMessage() {
 
     Other arguments:
         --SRAdir                      The directory where reads downloaded from the SRA will be stored
-        --vf_db                       Whether to look for virulence factors
         --outdir                      The output directory where the results will be saved
         --email                       Set this parameter to your e-mail address to get a summary e-mail with details of the run sent to you when the workflow exits
         -name                         Name for the pipeline run. If not specified, Nextflow will automatically generate a random mnemonic.
@@ -178,7 +176,6 @@ transcripts_file        = file(params.transcripts)
 sample_sheet            = file(params.reads)
 reads_ch                = Channel.fromFilePairs(params.reads)
 threads                 = 4
-aligner                 = params.aligner
 SRAdir                  = params.SRAdir
 file_ext                = 'int'
 quantification          = params.quantification
@@ -204,8 +201,8 @@ unstranded              = params.unstranded
 
 
 // SRST and MLST parameters
-srst_min_gene_cov           = params.srst_min_gene_cov
-srst_max_gene_divergence    = params.srst_max_gene_divergence
+//srst_min_gene_cov           = params.srst_min_gene_cov
+//srst_max_gene_divergence    = params.srst_max_gene_divergence
 
 
 // From https://pubmlst.org/data/dbases.xml             <----------------------- This needs a tweak to be generalised
